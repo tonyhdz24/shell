@@ -2,37 +2,47 @@
 #include <stdlib.h>
 #include <string.h>
 int main(int argc, char const *argv[]) {
-  /* code */
-  int isOn = 1;
 
   // Beginning of REPL
-  while (isOn) {
+  while (1) {
     printf("~ ");
+
+    // Allocate Memory for User Input
+    char *inputStr = malloc(100 * sizeof(char));
+    if (inputStr == NULL) {
+      perror("Unable to allocate memory");
+      exit(1);
+    }
     // Getting user input
-    char *inputStr = malloc(20 * sizeof(char));
-    char *cmd = malloc(20 * sizeof(char));
-    fgets(inputStr, sizeof(inputStr), stdin);
-    // removes traling \n from string
-    inputStr[strcspn(inputStr, "\n")] = '\0';
+    if (fgets(inputStr, 100, stdin) != NULL) {
+      // removes traling \n from string
+      inputStr[strcspn(inputStr, "\n")] = '\0';
+    };
+
+    char *cmd = malloc(50 * sizeof(char));
 
     int inputStrLength = strlen(inputStr);
-    printf("Size of input => %d", inputStrLength);
+
     // Parse command
-    for (int i = 0; i < 4; i++) {
-      printf("%c\n", inputStr[i]);
+    int c = 0;
+    for (c; inputStr[c] != ' '; c++) {
+      cmd[c] = inputStr[c];
     }
+    cmd[c] = '\0';
 
     //* Handling Commands
-    // exit command
-    // if (strcmp(inputStr, "exit 0") == 0) {
-    //   printf("***Good-Bye***\n");
-    //   isOn = 0;
-    // } else if (strcmp(inputStr, "echo") == 0) {
-    //   printf("%s", inputStr);
-    // } else {
-    //   printf("%s: command not found\n", inputStr);
-    // }
+    if (strcmp(cmd, "exit") == 0) {
+      printf("***Good-Bye***\n");
+      exit(0);
+    } else if (strcmp(cmd, "echo") == 0) {
+      for (c; inputStr[c] != '\0'; c++) {
+        printf("%c", inputStr[c]);
+      }
+      printf("\n");
+    } else {
+      printf("%s: command not found\n", inputStr);
+    }
+    free(inputStr);
   }
-
   return 0;
 }
