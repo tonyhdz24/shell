@@ -1,6 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+int validCommand(char *str) {
+  char *commands[] = {"exit", "echo", "type", "\0"};
+  int i = 0;
+  while (*commands[i++] != "\0") {
+    printf("%s\n", commands[i]);
+  }
+  return 0;
+}
+
 int main(int argc, char const *argv[]) {
 
   // Beginning of REPL
@@ -46,7 +56,7 @@ int main(int argc, char const *argv[]) {
     } else if (strcmp(cmd, "echo") == 0) {
       printf("%s \n", arg);
     } else if (strcmp(cmd, "type") == 0) {
-      printf("%s is a shell builtin", cmd);
+      validCommand(cmd);
     } else {
       printf("%s: command not found\n", inputStr);
     }
