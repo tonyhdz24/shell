@@ -14,17 +14,36 @@ void strTrim(char *str) {
   str[idx - 1] = '\0';
 };
 
-// Main Shell Loop
+//* Parts of the Shell loop
+// miso_read - Reads the command from standard input
+//           - Uses fgets to get user input
+//           - Only gets an input string 80 chars long
+//           - Calls strTrim to format input
 void miso_read(char *line);
 void miso_read(char *line) {
   fgets(line, 80, stdin);
   // Removing the trailing newline character
   strTrim(line);
 };
-// Parts of the Shell loop
+// miso_parse - Parse/Tokenize the input string separating the command string
+//              into a program and arguments
+//            - White spaces will be used as delimiters
+void miso_parse(char *line);
+void miso_parse(char *line) {
+  char *token;
+
+  token = strtok(line, " ");
+  while (token != NULL) {
+    printf("\n%s", token);
+    
+  }
+};
+
 // 1.) Read - Read the command from standard input
 // 2.) Parse - Separate the command string into a program and arguments
 // 3.) Execute - Run the parsed command
+
+//* Main Shell Loop
 void miso_loop();
 void miso_loop() {
   // This line variable will contain the entire command input
@@ -35,9 +54,10 @@ void miso_loop() {
   printf("$ ");
   // Read the command from standard input
   miso_read(line);
-  //? DEBUG
+  //? DEBUG - We now have the user input line
   printf("%s\n", line);
-  // miso_parse();
+  // Separate the command string into a program and arguments
+  miso_parse(line);
   // miso_exe();
 };
 
