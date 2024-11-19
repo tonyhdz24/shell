@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #define LINE_LENGTH 81
 
@@ -25,17 +26,25 @@ void miso_read(char *line) {
   // Removing the trailing newline character
   strTrim(line);
 };
+
 // miso_parse - Parse/Tokenize the input string separating the command string
 //              into a program and arguments
 //            - White spaces will be used as delimiters
-void miso_parse(char *line);
-void miso_parse(char *line) {
+void miso_parse(char **tokens, char *line);
+void miso_parse(char **tokens, char *line) {
+  // TODO:
+  // This function will revieve a tokens array and an input string. It will take
+  // the input and tokenize it storing each token in the tokens array.
   char *token;
+  char delim[] = " \t\r\n\a";
+  int position = 0;
 
   token = strtok(line, " ");
+
+  // Tokenizing the string
   while (token != NULL) {
-    printf("\n%s", token);
-    
+    tokens[position++] = token;
+    token = strtok(NULL, " ");
   }
 };
 
@@ -46,19 +55,28 @@ void miso_parse(char *line) {
 //* Main Shell Loop
 void miso_loop();
 void miso_loop() {
+  int tokenLength = 5;
   // This line variable will contain the entire command input
   char line[LINE_LENGTH];
-  // cmd will contain just the command
-  char cmd[LINE_LENGTH / 2];
 
+  // Beginning of SHELL loop
   printf("$ ");
+
   // Read the command from standard input
   miso_read(line);
-  //? DEBUG - We now have the user input line
-  printf("%s\n", line);
+
+  // Tokens will be a dynamic array of strings
+  char **tokens = malloc(5 * sizeof(char *));
   // Separate the command string into a program and arguments
-  miso_parse(line);
+  miso_parse(tokens, line);
+  printf("\nINPUT LINE HAS BEEN PARSED\n");
+  for (int i = 0; *tokens[i] != '\0'; i++) {
+    printf("%s\n", tokens[i]);
+  }
+
   // miso_exe();
+
+  free(tokens);
 };
 
 int main() {
