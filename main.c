@@ -3,16 +3,17 @@
 #include <string.h>
 #define LINE_LENGTH 81
 
-// Removes trailing newline of a string
+// Removes trailing newline of a string replacing it with a null character
 void strTrim(char *);
+
 void strTrim(char *str) {
-  int idx = 0;
-  // Scan string until we reach the end '\0'
-  while (str[idx] != '\0') {
-    idx++;
+  int strlength = strlen(str);
+  // IF input str is vailid(has length greater than 1) scan string until newline
+  // character is reached
+  if (strlength > 0 && str[strlength - 1] == '\n') {
+    // Replace trailing newLine character with null character
+    str[strlength - 1] = '\0';
   }
-  // Newline char is right before but now become the end
-  str[idx - 1] = '\0';
 };
 
 //* Parts of the Shell loop
@@ -46,6 +47,8 @@ void miso_parse(char **tokens, char *line) {
     tokens[position++] = token;
     token = strtok(NULL, " ");
   }
+  // Null terminating tokens Array
+  tokens[position] = NULL;
 };
 
 // 1.) Read - Read the command from standard input
@@ -66,11 +69,17 @@ void miso_loop() {
   miso_read(line);
 
   // Tokens will be a dynamic array of strings
-  char **tokens = malloc(5 * sizeof(char *));
+  char **tokens = malloc(tokenLength * sizeof(char *));
+  // Initializing elements in token array to NULL
+  for (int i = 0; i < tokenLength; i++) {
+    tokens[i] = NULL;
+  }
+
   // Separate the command string into a program and arguments
   miso_parse(tokens, line);
-  printf("\nINPUT LINE HAS BEEN PARSED\n");
-  for (int i = 0; *tokens[i] != '\0'; i++) {
+
+  // Tokens is not properly populated with the tokenized input string!!!
+  for (int i = 0; tokens[i] != NULL; i++) {
     printf("%s\n", tokens[i]);
   }
 
