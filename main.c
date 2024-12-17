@@ -1,8 +1,9 @@
-#include <bits/waitflags.h>
-#include <sched.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <stdio.h>     // For printf(), fprintf(), perror(), fgets()
+#include <stdlib.h>    // For malloc(), free(), exit()
+#include <string.h>    // For strcmp(), strtok(), strlen()
+#include <sys/types.h> // For pid_t
+#include <sys/wait.h>  // For waitpid()
+#include <unistd.h>    // For fork(), execvp(), and chdir()
 #define LINE_LENGTH 81
 
 // Removes trailing newline of a string replacing it with a null character
@@ -16,7 +17,7 @@ void strTrim(char *str) {
     // Replace trailing newLine character with null character
     str[strlength - 1] = '\0';
   }
-};
+}
 
 //* Parts of the Shell loop
 // miso_read - Reads the command from standard input
@@ -25,7 +26,7 @@ void strTrim(char *str) {
 //           - Calls strTrim to format input
 void miso_read(char *line);
 void miso_read(char *line) {
-  fgets(line, 80, stdin);
+  fgets(line, LINE_LENGTH, stdin);
   // Removing the trailing newline character
   strTrim(line);
 };
@@ -38,14 +39,20 @@ void miso_parse(char **tokens, char *line) {
   // TODO:
   // This function will revieve a tokens array and an input string. It will take
   // the input and tokenize it storing each token in the tokens array.
+  int tokenLength = 10;
+
   char *token;
   char delim[] = " \t\r\n\a";
   int position = 0;
 
-  token = strtok(line, " ");
+  token = strtok(line, delim);
 
   // Tokenizing the string
   while (token != NULL) {
+    if (position >= tokenLength - 1) {
+      tokenLength *= 2;
+      tokens = realloc(tokens, tokenLength * sizeof(char *));
+    }
     tokens[position++] = token;
     token = strtok(NULL, " ");
   }
@@ -91,54 +98,131 @@ int miso_launch(char **args) {
   return 1;
 }
 
-// mis0_exe - Executes the commands
-void miso_exe(char **tokens);
-void miso_exe(char **tokens) {};
-
 // 1.) Read - Read the command from standard input
 // 2.) Parse - Separate the command string into a program and arguments
 // 3.) Execute - Run the parsed command
 
+// buitlin shell commands
+int miso_cd(char **args);
+int miso_help(char **args);
+int miso_exit(char **args);
+/*
+  List of builtin commands, followed by their corresponding functions.
+ */
+char *builtin_str[] = {"cd", "help", "exit"};
+int (*builtin_func[])(char **) = {&miso_cd, &miso_help, &miso_exit};
+
+int miso_num_builtins() { return sizeof(builtin_str) / sizeof(char *); }
+// Built in function implementations
+
+/*
+  Built-in function: miso_cd
+  --------------------------
+  Changes the current working directory to the one specified in the arguments.
+
+  Parameters:
+    - args: An array of strings (command + arguments).
+      - args[0]: The command itself ("cd").
+      - args[1]: The target directory.
+
+  Functionality:
+    - If no argument is provided (`args[1] == NULL`), it prints an error.
+    - If `chdir` fails (e.g., the directory doesn't exist), it prints an error
+  using `perror`.
+
+  Return:
+    - Returns 1 to indicate the shell should continue running.
+
+  Example:
+    - Input: "cd /home"
+      - args[0] = "cd"
+      - args[1] = "/home"
+      - chdir("/home") changes the current working directory to "/home".
+*/
+int miso_cd(char **args) {
+  if (args[1] == NULL) {
+    fprintf(stderr, "miso: expected argument to \"cd\"\n ");
+  } else {
+    if (chdir(args[1]) != 0) {
+      perror("miso");
+    }
+  }
+  return 1;
+}
+
+int miso_help(char **args) {
+  int i;
+  printf("Antonio Hernandez's MISO\n");
+  printf("Type program names and arguments, and hit enter.\n");
+  printf("The following are built in:\n");
+
+  for (i = 0; i < miso_num_builtins(); i++) {
+    printf("  %s\n", builtin_str[i]);
+  }
+
+  printf("Use the man command for information on other programs.\n");
+  return 1;
+}
+int miso_exit(char **args) { return 0; }
+
+// mis0_exe - Executes the commands
+int miso_exe(char **args);
+int miso_exe(char **args) {
+  int i;
+
+  if (args[0] == NULL) {
+    // An empty command was entered.
+    return 1;
+  }
+
+  for (i = 0; i < miso_num_builtins(); i++) {
+    if (strcmp(args[0], builtin_str[i]) == 0) {
+      return (*builtin_func[i])(args);
+    }
+  }
+
+  return miso_launch(args);
+};
+
 //* Main Shell Loop
 void miso_loop();
 void miso_loop() {
+  int status; // Keep track of the current status of the shell
   int tokenLength = 5;
   // This line variable will contain the entire command input
   char line[LINE_LENGTH];
+  do {
+    // Beginning of SHELL loop
+    printf("$ ");
 
-  // Beginning of SHELL loop
-  printf("$ ");
+    // Read the command from standard input
+    miso_read(line);
 
-  // Read the command from standard input
-  miso_read(line);
+    // Tokens will be a dynamic array of strings
+    char **tokens = malloc(tokenLength * sizeof(char *));
+    // Initializing elements in token array to NULL
+    for (int i = 0; i < tokenLength; i++) {
+      tokens[i] = NULL;
+    }
 
-  // Tokens will be a dynamic array of strings
-  char **tokens = malloc(tokenLength * sizeof(char *));
-  // Initializing elements in token array to NULL
-  for (int i = 0; i < tokenLength; i++) {
-    tokens[i] = NULL;
-  }
+    // Separate the command string into a program and arguments
+    miso_parse(tokens, line);
 
-  // Separate the command string into a program and arguments
-  miso_parse(tokens, line);
+    // Tokens is not properly populated with the tokenized input string!!!
+    // for (int i = 0; tokens[i] != NULL; i++) {
+    //   printf("%s\n", tokens[i]);
+    // }
+    // Line Now Parsed and commands are ready to be executed
 
-  // Tokens is not properly populated with the tokenized input string!!!
-  for (int i = 0; tokens[i] != NULL; i++) {
-    printf("%s\n", tokens[i]);
-  }
-  // Line Now Parsed and commands are ready to be executed
+    status = miso_exe(tokens);
 
-  miso_exe(tokens);
-
-  free(tokens);
+    free(tokens);
+    /* code */
+  } while (status);
 };
 
 int main() {
-  int shellStatus = 1;
-  // Main shell loop
-  while (shellStatus) {
-    miso_loop();
-  }
-
+  printf("Welcome to Antonio Hernandez's MISO Shell!\n");
+  miso_loop(); // Run the shell loop
   return 0;
-};
+}
