@@ -1,3 +1,5 @@
+#include <bits/waitflags.h>
+#include <sched.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -50,6 +52,48 @@ void miso_parse(char **tokens, char *line) {
   // Null terminating tokens Array
   tokens[position] = NULL;
 };
+int miso_launch(char **args) {
+  pid_t pid, wpid; // Variables to hold process IDs
+  int status;      // Stores child's exit status
+
+  // Create a new process using fork()
+  pid = fork();
+
+  if (pid == 0) {
+    // ====== CHILD PROCESS ======
+    // The child process will execute the command specified in `args[0]`
+
+    // Replace current process image with a new program
+    if (execvp(args[0], args) == -1) {
+      perror("miso");
+    }
+    exit(EXIT_FAILURE);
+  } else if (pid < 0) {
+    // ====== ERROR FORKING ======
+    // If fork() fails (e.g., system resources are low), print an error
+    perror("miso");
+  } else {
+    // ====== PARENT PROCESS ======
+    // The parent process will wait for the child process to finish execution
+
+    do {
+      // Wait for the child process to change state
+      // - `pid`: the process ID of the child to wait for
+      // - `&status`: where the child's status will be stored
+      // - `WUNTRACED`: also return if the child is stopped (not terminated)
+      wpid = waitpid(pid, &status, WUNTRACED);
+
+      // Loop while the child:
+      // - Has not exited normally (WIFEXITED(status))
+      // - Has not been terminated by a signal (WIFSIGNALED(status)
+    } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+  }
+  return 1;
+}
+
+// mis0_exe - Executes the commands
+void miso_exe(char **tokens);
+void miso_exe(char **tokens) {};
 
 // 1.) Read - Read the command from standard input
 // 2.) Parse - Separate the command string into a program and arguments
@@ -82,8 +126,9 @@ void miso_loop() {
   for (int i = 0; tokens[i] != NULL; i++) {
     printf("%s\n", tokens[i]);
   }
+  // Line Now Parsed and commands are ready to be executed
 
-  // miso_exe();
+  miso_exe(tokens);
 
   free(tokens);
 };
