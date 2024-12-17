@@ -223,6 +223,9 @@ void miso_loop() {
 
 int main() {
   printf("Welcome to Antonio Hernandez's MISO Shell!\n");
+  printf(" /\\_/\\  \n");
+  printf("( o.o ) \n");
+  printf(" > ^ <  \n");
   miso_loop(); // Run the shell loop
   return 0;
 }
